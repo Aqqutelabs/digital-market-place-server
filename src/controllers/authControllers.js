@@ -20,7 +20,7 @@ exports.login = catchAsync(async (req, res, next) => {
 });
 
 exports.verifyEmail = catchAsync(async (req, res, next) => {
-  const { token } = req.params;
+  const { token } = req.body;
   const result = await authService.verifyEmail(token);
   res.status(200).json(result);
 });
@@ -32,8 +32,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 });
 
 exports.resetPassword = catchAsync(async (req, res, next) => {
-  const { token } = req.params;
-  const { password, passwordConfirm } = req.body;
+  const { token, password, passwordConfirm } = req.body;
   const result = await authService.resetPassword(token, password, passwordConfirm);
   sendResponseWithToken(res, 200, result);
 });

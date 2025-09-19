@@ -100,10 +100,20 @@ userSchema.methods.createPasswordResetToken = function() {
 
 // Method to generate a secure random token for email verification
 userSchema.methods.createEmailVerificationToken = function() {
-  const verificationToken = crypto.randomBytes(32).toString('hex');
+  // Generate a 4-digit numeric code as a string
+  const verificationToken = Math.floor(1000 + Math.random() * 9000).toString();
   this.emailVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
-  this.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // Token expires in 24 hours
+  this.emailVerificationExpires = Date.now() + 10 * 60 * 1000; // Token expires in 10 minutes
   return verificationToken;
+};
+
+// Method to generate a 4-digit code for password reset
+userSchema.methods.createPasswordResetCode = function() {
+  // Generate a 4-digit numeric code as a string
+  const resetCode = Math.floor(1000 + Math.random() * 9000).toString();
+  this.passwordResetToken = crypto.createHash('sha256').update(resetCode).digest('hex');
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // Code expires in 10 minutes
+  return resetCode;
 };
 
 const User = mongoose.model('User', userSchema);

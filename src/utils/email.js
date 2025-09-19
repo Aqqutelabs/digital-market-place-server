@@ -1,7 +1,7 @@
 // utils/email.js
 const nodemailer = require('nodemailer');
 const pug = require('pug'); // For HTML email templates (optional, but good practice)
-const htmlToText = require('html-to-text'); // For converting HTML to plain text
+const { htmlToText } = require('html-to-text'); // For converting HTML to plain text
 
 module.exports = class Email {
   constructor(user, url) {
@@ -12,6 +12,16 @@ module.exports = class Email {
   }
 
   newTransport() {
+    if (process.env.EMAIL_SERVICE === 'gmail') {
+      return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
+    }
+
     if (process.env.NODE_ENV === 'production') {
       // Implement a production email service like SendGrid, Mailgun, AWS SES
       // Example for SendGrid (install @sendgrid/mail):
@@ -51,7 +61,7 @@ module.exports = class Email {
       to: this.to,
       subject,
       html,
-      text: htmlToText.fromString(html) // Convert HTML to plain text for email clients that don't display HTML
+      text: htmlToText(html) // Convert HTML to plain text for email clients that don't display HTML
     };
 
     // 3) Create a transport and send email
@@ -78,12 +88,26 @@ module.exports = class Email {
       to: this.to,
       subject: 'Verify Your Email Address',
       html,
-      text: htmlToText.fromString(html)
+      text: htmlToText(html)
     };
     await this.newTransport().sendMail(mailOptions);
   }
 
-  async sendPasswordReset() {
-    await this.send('passwordReset', 'Your password reset token (valid for 10 min)');
+  async sendPasswordReset(code) {
+    // Send a 4-digit code for password reset
+    const html = pug.renderFile(`${__dirname}/../views/email/passwordReset.pug`, {
+      firstName: this.firstName,
+      code: code,
+      subject: 'Your Password Reset Code'
+    });
+
+    const mailOptions = {
+      from: this.from,
+      to: this.to,
+      subject: 'Your Password Reset Code',
+      html,
+      text: htmlToText(html)
+    };
+    await this.newTransport().sendMail(mailOptions);
   }
 };

@@ -26,12 +26,12 @@ app.use(cors({
 }));
 
 // 2. Security HTTP Headers
-app.use(helmet());
+// app.use(helmet());
 
 // 3. Development logging
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
+// if (process.env.NODE_ENV === 'development') {
+//   app.use(morgan('dev'));
+// }
 
 // 4. Rate Limiting
 const limiter = rateLimit({
@@ -39,18 +39,18 @@ const limiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   message: 'Too many requests from this IP, please try again in an hour!'
 });
-app.use('/api', limiter);
+// app.use('/api', limiter);
 
 // 5. Body parser, reading data from body into req.body
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
-app.use(cookieParser());
+// app.use(cookieParser());
 
 // 6. Data sanitization against NoSQL query injection
-app.use(mongoSanitize());
+// app.use(mongoSanitize());
 
 // 7. Data sanitization against XSS
-app.use(xss());
+// app.use(xss());
 
 // 8. Prevent parameter pollution
 app.use(hpp({
@@ -65,15 +65,15 @@ app.use(hpp({
 
 // 10. ROUTES
 app.use('/api/v1/auth', authRouter);
-// app.use('/api/v1/users', userRouter);
-// app.use('/api/v1/products', productRouter);
+app.use('/api/v1/users', userRouter);
+app.use('/api/v1/products', productRouter);
 
 
 // 11. Handle unhandled routes (404 Not Found)
 
 
 // 12. Global Error Handling Middleware (MUST be the last middleware)
-app.use(globalErrorHandler);
+// app.use(globalErrorHandler);
 
 module.exports = app;
 

@@ -10,19 +10,8 @@ const signToken = id => {
   });
 };
 
-const createSendToken = (user, statusCode, res) => {
+const createSendToken = (user, statusCode) => {
   const token = signToken(user._id);
-
-  // Set cookie options (optional, but good for browser-based apps)
-  const cookieOptions = {
-    expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-    ),
-    httpOnly: true, // Prevent client-side JS from reading the cookie
-    secure: process.env.NODE_ENV === 'production' // Only send over HTTPS in production
-  };
-
-  res.cookie('jwt', token, cookieOptions);
 
   // Remove password from output before sending response
   user.password = undefined;
@@ -51,9 +40,8 @@ exports.signup = async (userData, origin) => {
   const verificationToken = newUser.createEmailVerificationToken();
   await newUser.save({ validateBeforeSave: false }); // Save token without re-validating password
 
-  // Send verification email
-  const verificationUrl = `${origin}/verify-email/${verificationToken}`; // Or just send the code directly
-  await new Email(newUser, verificationUrl).sendEmailVerification(verificationToken); // Passing token directly for UI use case
+  // Send verification email (send the 4-digit code, not a link)
+  await new Email(newUser, null).sendEmailVerification(verificationToken); // Only the code is needed
 
   return createSendToken(newUser, 201); // 201 Created
 };
@@ -106,15 +94,14 @@ exports.forgotPassword = async (email, origin) => {
     throw new AppError('There is no user with that email address.', 404);
   }
 
-  // 2) Generate the random reset token
-  const resetToken = user.createPasswordResetToken();
-  await user.save({ validateBeforeSave: false }); // Save user with new token
+  // 2) Generate the random 4-digit reset code
+  const resetCode = user.createPasswordResetCode();
+  await user.save({ validateBeforeSave: false }); // Save user with new code
 
-  // 3) Send it to user's email
-  const resetURL = `${origin}/reset-password/${resetToken}`; // Frontend URL for reset
+  // 3) Send it to user's email (send the code, not a link)
   try {
-    await new Email(user, resetURL).sendPasswordReset();
-    return { status: 'success', message: 'Token sent to email!' };
+    await new Email(user, null).sendPasswordReset(resetCode);
+    return { status: 'success', message: 'Reset code sent to email!' };
   } catch (err) {
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;

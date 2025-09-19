@@ -19,7 +19,7 @@ router.use(
   authMiddleware.ensureVendorKyc // Ensure vendor has completed KYC before listing products
 );
 
-// Routes for creating and updating products
+
 router.post(
   '/',
   uploadMiddleware.uploadProductImages, // Multer middleware to process 'photos' field

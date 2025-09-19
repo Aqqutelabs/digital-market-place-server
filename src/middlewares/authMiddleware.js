@@ -23,6 +23,8 @@ exports.protect = catchAsync(async (req, res, next) => {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
+  // Debug: Log the received token
+  console.log('Received JWT:', token);
   // You might also check for a token in cookies if you're sending JWTs there
   // else if (req.cookies.jwt) {
   //   token = req.cookies.jwt;
@@ -33,28 +35,21 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
 
   // 2) Verify token
-  // jwt.verify returns a callback, promisify makes it return a promise
-  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-
-  // 3) Check if user still exists
-  const currentUser = await User.findById(decoded.id);
-  if (!currentUser) {
-    return next(
-      new AppError('The user belonging to this token no longer exists.', 401)
-    );
+  try {
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    // 3) Check if user still exists
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      return next(
+        new AppError('The user belonging to this token no longer exists.', 401)
+      );
+    }
+    req.user = currentUser;
+    next();
+  } catch (err) {
+    console.error('JWT verification error:', err);
+    return next(new AppError('Invalid or expired token. Please log in again.', 401));
   }
-
-  // 4) Check if user changed password after the token was issued
-  // (Requires a passwordChangedAt field on the User model, which we don't have yet, but is a good security practice)
-  // if (currentUser.changedPasswordAfter(decoded.iat)) {
-  //   return next(
-  //     new AppError('User recently changed password! Please log in again.', 401)
-  //   );
-  // }
-
-  // GRANT ACCESS TO PROTECTED ROUTE
-  req.user = currentUser; // Attach user to the request object
-  next();
 });
 
 // Middleware to restrict access based on roles

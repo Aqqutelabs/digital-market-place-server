@@ -16,6 +16,7 @@ const globalErrorHandler = require('./src/middlewares/errorMiddleware');
 const authRouter = require('./src/routes/authRoutes');
 const userRouter = require('./src/routes/userRoutes');
 const productRouter = require('./src/routes/productRoutes');
+const orderRouter = require('./src/routes/orderRoutes');
 
 const app = express();
 
@@ -67,12 +68,8 @@ app.use(hpp({
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/products', productRouter);
+app.use('/api/v1/orders', orderRouter);
 
-
-// 11. Handle unhandled routes (404 Not Found)
-
-
-// 12. Global Error Handling Middleware (MUST be the last middleware)
 // app.use(globalErrorHandler);
 
 module.exports = app;

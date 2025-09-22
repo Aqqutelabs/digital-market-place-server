@@ -20,6 +20,7 @@ router.patch('/completeVendorKyc',
   authMiddleware.restrictTo('vendor'), // Only vendors can complete KYC
   authController.completeVendorKyc
 );
+
 // router.get('/logout', authController.logout); // If you implement a logout in service/controller
 
 module.exports = router;

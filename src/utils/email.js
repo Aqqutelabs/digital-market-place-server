@@ -111,3 +111,54 @@ module.exports = class Email {
     await this.newTransport().sendMail(mailOptions);
   }
 };
+
+
+exports.sendCouponEmail = async (userEmail, couponCode, couponValue, couponType, expiryDate) => {
+  const expiryString = expiryDate ? new Date(expiryDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
+  const discountDescription = couponType === 'percentage' ? `${couponValue}% off` : `NGN ${couponValue.toFixed(2)} off`;
+
+  const subject = `Your Exclusive WiderNetFarms Coupon!`;
+  const htmlContent = `
+    <h1>Here's Your Exclusive Coupon!</h1>
+    <p>Dear customer,</p>
+    <p>As a thank you for your recent purchase, here is a special coupon code just for you:</p>
+    <h2 style="color: #4CAF50;">${couponCode}</h2>
+    <p>This coupon gives you <strong>${discountDescription}</strong> on your next order.</p>
+    <p>It expires on: <strong>${expiryString}</strong>. Don't miss out!</p>
+    <p>Use this code at checkout to enjoy your discount.</p>
+    <p>Happy Shopping!</p>
+    <p>The WiderNetFarms Team</p>
+  `;
+
+  // Use nodemailer directly for consistency with other email functions
+  const mailOptions = {
+    from: `WiderNetFarms Support <${process.env.EMAIL_FROM}>`,
+    to: userEmail,
+    subject,
+    html: htmlContent,
+    text: htmlToText(htmlContent)
+  };
+
+  // Create a transport and send email
+  const nodemailer = require('nodemailer');
+  let transporter;
+  if (process.env.EMAIL_SERVICE === 'gmail') {
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+  } else {
+    transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: process.env.EMAIL_PORT,
+      auth: {
+        user: process.env.EMAIL_USERNAME,
+        pass: process.env.EMAIL_PASSWORD
+      }
+    });
+  }
+  await transporter.sendMail(mailOptions);
+};

@@ -34,7 +34,7 @@ const variantSchema = new mongoose.Schema({
     trim: true,
     maxlength: [500, 'Variant description cannot exceed 500 characters']
   }
-}, { _id: false }); // Do not create a separate `_id` for sub-documents if not needed for direct querying
+}); // Removed { _id: false } to allow Mongoose to generate _id for each variant
 
 // Pre-save hook for each variant to calculate sellingPrice
 variantSchema.pre('save', function(next) {

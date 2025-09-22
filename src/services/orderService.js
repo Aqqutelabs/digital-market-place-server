@@ -141,16 +141,49 @@ exports.createOrder = async (userId, { cartItems, billingAddress, paymentMethod,
       metadata: { userId }
     });
 
+    // 4. Generate and save a new unique coupon for the user who just made the purchase
+    const generatedCouponCode = Math.random().toString(36).substring(2, 10).toUpperCase(); // 8 random chars
+    const newCoupon = await Coupon.create({
+      code: `ORDER-${generatedCouponCode}`,
+      type: 'percentage', // Example: 15% off
+      value: 15,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Expires in 30 days
+      minOrderAmount: 1000, // Example: NGN 1000 minimum order
+      maxUses: 1, // Single use
+      forSpecificUser: true,
+      userWhoCanUse: userId, // Only this user can use it
+      isActive: true
+    });
+
     await session.commitTransaction();
-
-    // Return the payment session info (including Paystack payment URL/reference)
-    return { status: 'pending', data: { order: newOrder[0], payment: paymentSession } };
-
-  } catch (err) {
-    await session.abortTransaction();
-    throw err; // Re-throw the error to be caught by catchAsync middleware
-  } finally {
     session.endSession();
+
+    // Send the newly generated coupon email (non-blocking, after transaction)
+    email.sendCouponEmail(
+      billingAddress.email,
+      newCoupon.code,
+      newCoupon.value,
+      newCoupon.type,
+      newCoupon.expiresAt,
+      {
+        orderId: newOrder[0]._id,
+        productNames: orderItems.map(item => item.productName).join(', '),
+        totalAmount: totalAmount
+      }
+    ).catch(err => {
+      console.error('Error sending generated coupon email:', err);
+    });
+
+    // Return the payment session info (including Paystack payment URL/reference) and the new coupon
+    return { status: 'pending', data: { order: newOrder[0], payment: paymentSession, newCoupon: newCoupon.code } };
+  } catch (err) {
+    try {
+      await session.abortTransaction();
+    } catch (abortErr) {
+      // Ignore abort errors (e.g., already committed)
+    }
+    session.endSession();
+    throw err; // Re-throw the error to be caught by catchAsync middleware
   }
 };
 

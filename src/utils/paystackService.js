@@ -13,7 +13,7 @@ exports.createPaymentSession = async ({ amount, email, orderId, metadata }) => {
     const response = await axios.post(
       `${PAYSTACK_BASE_URL}/transaction/initialize`,
       {
-        amount: amount * 100, // Convert to kobo
+        amount: Math.round(amount * 100), // Convert to kobo and ensure integer
         email,
         metadata: { ...metadata, orderId },
         callback_url: `${process.env.BASE_URL || 'http://localhost:3000'}/api/v1/payments/verify`
@@ -40,7 +40,8 @@ exports.createPaymentSession = async ({ amount, email, orderId, metadata }) => {
       paymentId: payment._id
     };
   } catch (error) {
-    throw new Error('Failed to initialize payment');
+    console.error('Paystack payment initialization error:', error.response ? error.response.data : error.message);
+    throw new Error('Failed to initialize payment: ' + (error.response ? JSON.stringify(error.response.data) : error.message));
   }
 };
 

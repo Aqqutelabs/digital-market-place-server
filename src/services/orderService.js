@@ -6,6 +6,8 @@ const paymentGateway = require('../utils/paymentGateway');
 const email = require('../utils/email');
 const mongoose = require('mongoose');
 const Coupon = require('../models/Coupons');
+const User = require('../models/User');
+const paystackService = require('../utils/paystackService');
 
 
 const calculateOrderTotals = async (cartItems, requestedCouponCode = null, userId) => {
@@ -116,14 +118,7 @@ exports.createOrder = async (userId, { cartItems, billingAddress, paymentMethod,
         throw new AppError(`Coupon "${couponCode}" could not be applied: ${couponValidationError}`, 400);
     }
 
-    // 2. Process Payment via external gateway
-    const paymentResult = await paymentGateway.processPayment(paymentMethod, totalAmount, 'NGN', null, billingAddress);
-
-    if (paymentResult.status !== 'success') {
-      throw new AppError('Payment failed: ' + paymentResult.message, 402);
-    }
-
-    // 3. Create the Order document in the database
+    // 2. Create the Order document in the database with paymentStatus: 'pending'
     const newOrder = await Order.create([{
       buyer: userId,
       orderItems,
@@ -133,71 +128,23 @@ exports.createOrder = async (userId, { cartItems, billingAddress, paymentMethod,
       discountAmount,
       totalAmount,
       paymentMethod,
-      paymentStatus: 'completed',
-      transactionId: paymentResult.transactionId,
-      orderStatus: 'completed',
+      paymentStatus: 'pending',
+      orderStatus: 'pending',
       couponApplied: appliedCoupon ? appliedCoupon.code : null
     }], { session });
 
-    // 4. Update Product `totalSold` counts
-    for (const item of orderItems) {
-      await Product.findByIdAndUpdate(
-        item.product,
-        { $inc: { totalSold: item.quantity } },
-        { new: true, session }
-      );
-    }
-
-    // 5. Update coupon usage if a coupon was applied
-    if (appliedCoupon) {
-      const update = {
-        $inc: { usesCount: 1 }
-      };
-      // If it's a general coupon that's single-use per user, add the user to usedByUsers
-      if (!appliedCoupon.forSpecificUser) {
-          update.$push = { usedByUsers: userId };
-      }
-
-      await Coupon.findByIdAndUpdate(
-        appliedCoupon._id,
-        update,
-        { new: true, session }
-      );
-    }
-
-    // 6. Generate and save a new unique coupon for the user who just made the purchase
-    const generatedCouponCode = Math.random().toString(36).substring(2, 10).toUpperCase(); // 8 random chars
-    const newCoupon = await Coupon.create([{
-      code: `ORDER-${generatedCouponCode}`,
-      type: 'percentage', // Example: 15% off
-      value: 15,
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Expires in 30 days
-      minOrderAmount: 1000, // Example: NGN 1000 minimum order
-      maxUses: 1, // Single use
-      forSpecificUser: true,
-      userWhoCanUse: userId, // Only this user can use it
-      isActive: true
-    }], { session });
+    // 3. Create Paystack payment session
+    const paymentSession = await paystackService.createPaymentSession({
+      amount: totalAmount,
+      email: billingAddress.email,
+      orderId: newOrder[0]._id,
+      metadata: { userId }
+    });
 
     await session.commitTransaction();
 
-    // 7. Send order confirmation email (non-blocking)
-    email.sendOrderConfirmationEmail(billingAddress.email, newOrder[0]).catch(err => {
-      console.error('Error sending order confirmation email:', err);
-    });
-
-    // 8. Send the newly generated coupon email (non-blocking)
-    email.sendCouponEmail(
-      billingAddress.email,
-      newCoupon[0].code,
-      newCoupon[0].value,
-      newCoupon[0].type,
-      newCoupon[0].expiresAt
-    ).catch(err => {
-      console.error('Error sending generated coupon email:', err);
-    });
-
-    return { status: 'success', data: { order: newOrder[0], newCoupon: newCoupon[0].code } };
+    // Return the payment session info (including Paystack payment URL/reference)
+    return { status: 'pending', data: { order: newOrder[0], payment: paymentSession } };
 
   } catch (err) {
     await session.abortTransaction();

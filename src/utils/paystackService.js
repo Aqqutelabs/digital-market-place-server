@@ -30,6 +30,7 @@ exports.createPaymentSession = async ({ amount, email, orderId, metadata }) => {
       amount,
       reference: response.data.data.reference,
       orderId: new ObjectId(orderId),
+      userId: new ObjectId(metadata.userId), // Store userId
       status: 'PENDING',
       metadata: response.data.data,
       createdAt: new Date(),

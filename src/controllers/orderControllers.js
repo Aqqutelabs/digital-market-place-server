@@ -19,3 +19,9 @@ exports.getOrder = catchAsync(async (req, res, next) => {
   const result = await orderService.getOrderById(req.params.id, req.user.id);
   res.status(200).json(result);
 });
+
+exports.getOrdersByUser = catchAsync(async (req, res, next) => {
+  const userId = req.params.userId;
+  const result = await orderService.getOrders(userId);
+  res.status(200).json(result);
+});

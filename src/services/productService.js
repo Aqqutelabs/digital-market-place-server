@@ -4,6 +4,16 @@ const AppError = require('../utils/appError');
 const APIFeatures = require('../utils/apiFeatures');
 
 exports.createProduct = async (userId, productData) => {
+  // Validate category and subCategory pairing
+  const softwareSubs = ['AI tools', 'Monitoring apps', 'Booking', 'Farm operations', 'Finance'];
+  const hardwareSubs = ['Sensors', 'Drones', 'Tractors', 'Irrigation', 'Other'];
+  if (productData.category === 'Software' && !softwareSubs.includes(productData.subCategory)) {
+    throw new AppError('Invalid subCategory for Software. Allowed: ' + softwareSubs.join(', '), 400);
+  }
+  if (productData.category === 'Hardware' && !hardwareSubs.includes(productData.subCategory)) {
+    throw new AppError('Invalid subCategory for Hardware. Allowed: ' + hardwareSubs.join(', '), 400);
+  }
+
   // Ensure the vendor field is correctly set to the current user's ID
   const newProductData = {
     ...productData,
@@ -188,17 +198,16 @@ exports.getMonthlySelloutRate = async (userId, year = new Date().getFullYear()) 
   const monthlyStats = await Product.aggregate(pipeline);
 
   // Format to match UI if needed (e.g., specific products, popularity)
-  // The UI shows "Name", "Popularity", "Sales" per product for the month.
-  // This would typically come from an 'Order' model where sales are recorded monthly.
-  // For current setup, we can adapt.
+  // The UI shows "Name", "Farmer's Guide", "Tractor" with direct sales numbers,
+  // suggesting a need for specific product sales data per month.
+  // This requires either a detailed sales record per product per month,
+  // or an aggregation that can simulate or approximate this data.
+
   const formattedStats = monthlyStats.map(stat => {
-    // This is a simplified representation. A true "sell-out rate" per product per month
-    // would require tracking individual sales over time.
-    // For the UI's "Monthly Sell-out Rate" table, it likely expects a list of top performers
-    // (by sales) within a recent period, or an aggregate like "products sold this month".
-    // Here, we'll provide a list of top selling products within the monthly context,
-    // which may require further aggregation on the client side or a different pipeline.
-    // For now, let's provide a list of products that were listed in that month and their total sales.
+    // For each month's stats, we would ideally show top products by sales.
+    // This requires either:
+    // - Monthly sales data per product (from an Order model, ideally)
+    // - Or, a simplified assumption based on totalSold if monthly data isn't available.
 
     const topProductsForMonth = stat.products
       .sort((a, b) => b.totalSold - a.totalSold)
@@ -240,4 +249,10 @@ exports.getMonthlySelloutRate = async (userId, year = new Date().getFullYear()) 
       monthlySelloutRateDisplay: mockMonthlySelloutData // This directly mimics the UI's monthly display
     }
   };
+};
+
+exports.getProductsByCategory = async (query) => {
+  // Simple find by category and optional subCategory
+  const products = await Product.find(query);
+  return products;
 };

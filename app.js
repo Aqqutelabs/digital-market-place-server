@@ -17,6 +17,7 @@ const authRouter = require('./src/routes/authRoutes');
 const userRouter = require('./src/routes/userRoutes');
 const productRouter = require('./src/routes/productRoutes');
 const orderRouter = require('./src/routes/orderRoutes');
+const cartRouter =  require('./src/routes/cartRoutes');
 
 const app = express();
 
@@ -69,7 +70,8 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/products', productRouter);
 app.use('/api/v1/orders', orderRouter);
-
+app.use('/api/v1/cart', cartRouter);
+app.use('/api/v1/payments', require('./src/routes/paymentRoutes'));
 // app.use(globalErrorHandler);
 
 module.exports = app;

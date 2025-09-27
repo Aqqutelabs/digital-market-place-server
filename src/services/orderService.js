@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const Coupon = require('../models/Coupons');
 const User = require('../models/User');
 const paystackService = require('../utils/paystackService');
+const cartService = require('./cartService');
 
 
 const calculateOrderTotals = async (cartItems, requestedCouponCode = null, userId) => {
@@ -208,4 +209,27 @@ exports.getOrderById = async (orderId, userId) => {
     throw new AppError('No order found with that ID for this user.', 404);
   }
   return { status: 'success', data: { order } };
+};
+
+exports.checkoutCart = async (userId, { billingAddress, paymentMethod, couponCode }) => {
+  const cart = await cartService.getCart(userId);
+  if (!cart || cart.items.length === 0) {
+    throw new AppError('Cart is empty. Add items before checkout.', 400);
+  }
+  // Convert cart items to order format
+  const cartItems = cart.items.map(item => ({
+    productId: item.product._id || item.product,
+    variantId: item.variantId,
+    quantity: item.quantity
+  }));
+  // Use existing order creation logic
+  const orderResult = await exports.createOrder(userId, {
+    cartItems,
+    billingAddress,
+    paymentMethod,
+    couponCode
+  });
+  // Clear cart after successful order
+  await cartService.clearCart(userId);
+  return orderResult;
 };

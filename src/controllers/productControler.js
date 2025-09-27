@@ -66,3 +66,15 @@ exports.getMonthlySelloutRate = catchAsync(async (req, res, next) => {
   const result = await productService.getMonthlySelloutRate(req.user.id, year);
   res.status(200).json(result);
 });
+
+exports.getProductsByCategory = catchAsync(async (req, res, next) => {
+  const { category, subCategory } = req.query;
+  if (!category) {
+    return res.status(400).json({ status: 'fail', message: 'Category is required' });
+  }
+  // Build query object
+  const query = { category };
+  if (subCategory) query.subCategory = subCategory;
+  const products = await productService.getProductsByCategory(query);
+  res.status(200).json({ status: 'success', results: products.length, data: { products } });
+});

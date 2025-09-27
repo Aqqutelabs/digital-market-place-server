@@ -12,6 +12,7 @@ router.get('/top-selling', authMiddleware.protect, productController.getTopSelli
 router.get('/monthly-sellout', authMiddleware.protect, productController.getMonthlySelloutRate);
 router.get('/', productController.getAllProducts);
 router.get('/:id', productController.getProduct);
+router.get('/by-category', productController.getProductsByCategory); // Fetch products by category and optional subCategory
 
 // Vendor-specific routes (require authentication and vendor role)
 router.use(authMiddleware.protect); // All routes below this require a logged-in user

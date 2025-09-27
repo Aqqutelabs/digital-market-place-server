@@ -14,5 +14,7 @@ router.post('/checkout', orderController.checkout);
 // Routes for retrieving orders
 router.get('/', orderController.getOrders); // Get all orders for the current user
 router.get('/:id', orderController.getOrder); // Get a specific order by ID for the current user
+// Get all orders for a specific user (admin only)
+router.get('/user/:userId',  orderController.getOrdersByUser);
 
 module.exports = router;

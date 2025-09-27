@@ -63,13 +63,20 @@ const productSchema = new mongoose.Schema({
   category: {
     type: String,
     required: [true, 'Category is required'],
+    enum: ['Software', 'Hardware'],
     trim: true,
     maxlength: [50, 'Category cannot exceed 50 characters']
   },
   subCategory: {
     type: String,
     trim: true,
-    default: null,
+    required: [true, 'Sub-category is required'],
+    enum: [
+      // Software subcategories
+      'AI tools', 'Monitoring apps', 'Booking', 'Farm operations', 'Finance',
+      // Hardware subcategories
+      'Sensors', 'Drones', 'Tractors', 'Irrigation', 'Other'
+    ],
     maxlength: [50, 'Sub-category cannot exceed 50 characters']
   },
   type: { // e.g., Hardware, Software, Digital Product, as seen in filters

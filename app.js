@@ -66,6 +66,9 @@ app.use(hpp({
 // app.use(express.static(`${__dirname}/public`));
 
 // 10. ROUTES
+app.get('/', (req, res) => {
+  res.json({ message: 'Hello from DIH server!' });
+});
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/products', productRouter);

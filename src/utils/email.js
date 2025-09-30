@@ -23,18 +23,18 @@ const Email = module.exports = class Email {
       });
     }
 
-    if (process.env.NODE_ENV === 'production') {
-      // Implement a production email service like SendGrid, Mailgun, AWS SES
-      // Example for SendGrid (install @sendgrid/mail):
-      // return nodemailer.createTransport({
-      //   service: 'SendGrid',
-      //   auth: {
-      //     user: process.env.SENDGRID_USERNAME,
-      //     pass: process.env.SENDGRID_PASSWORD
-      //   }
-      // });
-      // For now, let's just use Mailtrap for both dev/prod sim if not deploying
-    }
+    // if (process.env.NODE_ENV === 'production') {
+    //   // Implement a production email service like SendGrid, Mailgun, AWS SES
+    //   // Example for SendGrid (install @sendgrid/mail):
+    //   // return nodemailer.createTransport({
+    //   //   service: 'SendGrid',
+    //   //   auth: {
+    //   //     user: process.env.SENDGRID_USERNAME,
+    //   //     pass: process.env.SENDGRID_PASSWORD
+    //   //   }
+    //   // });
+    //   // For now, let's just use Mailtrap for both dev/prod sim if not deploying
+    // }
 
     // Default to Mailtrap for development (or simulated production)
     return nodemailer.createTransport({

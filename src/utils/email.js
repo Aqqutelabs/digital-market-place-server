@@ -13,36 +13,12 @@ const Email = module.exports = class Email {
   }
 
   newTransport() {
-    if (process.env.EMAIL_SERVICE === 'gmail') {
-      return nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-        }
-      });
-    }
-
-    // if (process.env.NODE_ENV === 'production') {
-    //   // Implement a production email service like SendGrid, Mailgun, AWS SES
-    //   // Example for SendGrid (install @sendgrid/mail):
-    //   // return nodemailer.createTransport({
-    //   //   service: 'SendGrid',
-    //   //   auth: {
-    //   //     user: process.env.SENDGRID_USERNAME,
-    //   //     pass: process.env.SENDGRID_PASSWORD
-    //   //   }
-    //   // });
-    //   // For now, let's just use Mailtrap for both dev/prod sim if not deploying
-    // }
-
-    // Default to Mailtrap for development (or simulated production)
+    // Always use Gmail configuration
     return nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
+      service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
       }
     });
   }
@@ -145,25 +121,13 @@ module.exports.sendCouponEmail = async (userEmail, couponCode, couponValue, coup
   // Use nodemailer directly for consistency with other email functions
   const nodemailer = require('nodemailer');
   const { htmlToText } = require('html-to-text');
-  let transporter;
-  if (process.env.EMAIL_SERVICE === 'gmail') {
-    transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
-  } else {
-    transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
-      auth: {
-        user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD
-      }
-    });
-  }
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
   await transporter.sendMail({
     from: `WiderNetFarms Support <${process.env.EMAIL_FROM}>`,
     to: userEmail,

@@ -1,5 +1,5 @@
 // utils/email.js
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const pug = require('pug'); // For HTML email templates (optional, but good practice)
 const { htmlToText } = require('html-to-text'); // For converting HTML to plain text
 
@@ -12,39 +12,24 @@ const Email = module.exports = class Email {
     this.from = `WiderNetFarms Support <${process.env.EMAIL_FROM}>`;
   }
 
-  newTransport() {
-    // Use Gmail SMTP configuration
-    return nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) : 587, // 587 for TLS, 465 for SSL
-      secure: process.env.EMAIL_PORT == '465', // true for 465, false for 587
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
+  async sendEmail({ to, subject, html }) {
+    const resend = new Resend('re_9tZmVBVQ_2ow1XSBKtDFaVPnBhPqSfk1r');
+    await resend.emails.send({
+      from: this.from,
+      to,
+      subject,
+      html
     });
   }
 
   // Send the actual email
   async send(template, subject) {
-    // 1) Render HTML based on a pug template
     const html = pug.renderFile(`${__dirname}/../views/email/${template}.pug`, {
       firstName: this.firstName,
       url: this.url,
       subject
     });
-
-    // 2) Define email options
-    const mailOptions = {
-      from: this.from,
-      to: this.to,
-      subject,
-      html,
-      text: htmlToText(html) // Convert HTML to plain text for email clients that don't display HTML
-    };
-
-    // 3) Create a transport and send email
-    await this.newTransport().sendMail(mailOptions);
+    await this.sendEmail({ to: this.to, subject, html });
   }
 
   async sendWelcome() {
@@ -69,7 +54,7 @@ const Email = module.exports = class Email {
       html,
       text: htmlToText(html)
     };
-    await this.newTransport().sendMail(mailOptions);
+  await this.sendEmail({ to: this.to, subject: 'Verify Your Email Address', html });
   }
 
   async sendPasswordReset(code) {
@@ -87,7 +72,7 @@ const Email = module.exports = class Email {
       html,
       text: htmlToText(html)
     };
-    await this.newTransport().sendMail(mailOptions);
+  await this.sendEmail({ to: this.to, subject: 'Your Password Reset Code', html });
   }
 };
 
@@ -120,21 +105,11 @@ module.exports.sendCouponEmail = async (userEmail, couponCode, couponValue, coup
     <p>The WiderNetFarms Team</p>
   `;
 
-  // Use nodemailer directly for consistency with other email functions
-  const nodemailer = require('nodemailer');
-  const { htmlToText } = require('html-to-text');
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-  await transporter.sendMail({
+  const resend = new Resend('re_9tZmVBVQ_2ow1XSBKtDFaVPnBhPqSfk1r');
+  await resend.emails.send({
     from: `WiderNetFarms Support <${process.env.EMAIL_FROM}>`,
     to: userEmail,
     subject,
-    html: htmlContent,
-    text: htmlToText(htmlContent)
+    html: htmlContent
   });
 };

@@ -8,9 +8,18 @@ const sendResponseWithToken = (res, statusCode, result) => {
 };
 
 exports.signup = catchAsync(async (req, res, next) => {
-  const origin = req.headers.origin || `${req.protocol}://${req.get('host')}`; // Determine the origin for email links
-  const result = await authService.signup(req.body, origin);
-  sendResponseWithToken(res, 201, result); // 201 Created
+  try {
+    const origin = req.headers.origin || `${req.protocol}://${req.get('host')}`; // Determine the origin for email links
+    const result = await authService.signup(req.body, origin);
+    sendResponseWithToken(res, 201, result); // 201 Created
+  } catch (err) {
+    // Return error details in API response
+    res.status(err.statusCode || 400).json({
+      status: 'fail',
+      message: err.message || 'Signup failed',
+      error: err.errors || undefined
+    });
+  }
 });
 
 exports.login = catchAsync(async (req, res, next) => {

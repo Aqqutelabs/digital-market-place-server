@@ -13,9 +13,11 @@ const Email = module.exports = class Email {
   }
 
   newTransport() {
-    // Always use Gmail configuration
+    // Use Gmail SMTP configuration
     return nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) : 587, // 587 for TLS, 465 for SSL
+      secure: process.env.EMAIL_PORT == '465', // true for 465, false for 587
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS

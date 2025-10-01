@@ -9,17 +9,25 @@ const Email = module.exports = class Email {
     this.to = user.email;
     this.firstName = user.fullName.split(' ')[0];
     this.url = url;
-    this.from = `WiderNetFarms Support <${process.env.EMAIL_FROM}>`;
+    this.from = 'WiderNetFarms Support <noreply@data.widernetfarms.org>';
   }
 
   async sendEmail({ to, subject, html }) {
     const resend = new Resend('re_9tZmVBVQ_2ow1XSBKtDFaVPnBhPqSfk1r');
-    await resend.emails.send({
+    try {
+      const response = await resend.emails.send({
       from: this.from,
       to,
       subject,
       html
     });
+    console.log("Resend response:", response);
+      console.log(`Email sent to ${to} with subject: ${subject}`);
+    } catch (error) {
+      console.error(`Failed to send email to ${to}:`, error);
+      // Optionally, you can throw the error to handle it upstream
+      // throw error;
+    }
   }
 
   // Send the actual email
